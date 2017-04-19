@@ -65,7 +65,7 @@ from ..utils.resolver import (pick, paginate_and_pick, is_hashid, is_data_obj_id
 from ..utils.completer import (path_completer, DXPathCompleter, DXAppCompleter, LocalCompleter,
                                ListCompleter, MultiCompleter)
 from ..utils.describe import (print_data_obj_desc, print_desc, print_ls_desc, get_ls_l_desc, print_ls_l_header,
-                              print_ls_l_desc, get_io_desc, get_find_executions_string)
+                              print_ls_l_desc, get_ls_l_desc_fields, get_io_desc, get_find_executions_string)
 
 try:
     import colorama
@@ -1053,7 +1053,7 @@ def tree(args):
                 subtree = subtree[path_element_desc]
 
         for item in sorted(dxpy.find_data_objects(project=project, folder=folderpath,
-                                                  recurse=True, describe=True),
+                                                  recurse=True, describe=dict(fields=get_ls_l_desc_fields())),
                            key=cmp_names):
             subtree = tree
             for path_element in item['describe']['folder'][len(folderpath):].split("/"):
@@ -2242,6 +2242,12 @@ def find_data(args):
     if args.folder is not None and not args.folder.startswith('/'):
         args.project, args.folder, _none = try_call(resolve_path, args.folder, expected='folder')
 
+    if args.brief:
+        describe_input = dict(fields=dict(project=True, id=True))
+    elif args.verbose:
+        describe_input = True
+    else:
+        describe_input = dict(fields=get_ls_l_desc_fields())
     try:
         results = dxpy.find_data_objects(classname=args.classname,
                                          state=args.state,
@@ -2258,7 +2264,7 @@ def find_data(args):
                                          modified_before=args.mod_before,
                                          created_after=args.created_after,
                                          created_before=args.created_before,
-                                         describe=(not args.brief))
+                                         describe=describe_input)
         if args.json:
             print(json.dumps(list(results), indent=4))
             return

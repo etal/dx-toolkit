@@ -737,7 +737,17 @@ def ls(args):
             if args.brief:
                 describe_input = dict(fields={'id': True, 'name': True})
             elif args.verbose:
-                describe_input = True
+                describe_input = dict(fields={
+                    'id': True,
+                    'state': True,
+                    'folder': True,
+                    'name': True,
+                    'class': True,
+                    'size': True,
+                    'length': True,
+                    'project': True,
+                    'modified': True
+                })
             else:
                 describe_input = dict(fields={'id': True, 'class': True, 'name': True})
             resp = dxproj.list_folder(folder=folderpath,

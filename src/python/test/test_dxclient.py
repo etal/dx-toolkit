@@ -8864,6 +8864,19 @@ class TestDXCp(DXTestCase):
         rm_project(proj_id)
 
 
+class TestDXLs(DXTestCase):
+    def test_regular_output(self):
+        dxpy.new_dxrecord(project=self.project, name="foo", close=True)
+        o = run("dx ls")
+        self.assertEqual(o.strip(), "foo")
+
+    def test_long_output(self):
+        rec = dxpy.new_dxrecord(project=self.project, name="foo", close=True)
+        o = run("dx ls -l")
+        #                             state    modified                              name      id
+        self.assertRegexpMatches(o, r"closed\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+foo \(" + rec.get_id() + "\)")
+
+
 if __name__ == '__main__':
     if 'DXTEST_FULL' not in os.environ:
         sys.stderr.write('WARNING: env var DXTEST_FULL is not set; tests that create apps or run jobs will not be run\n')

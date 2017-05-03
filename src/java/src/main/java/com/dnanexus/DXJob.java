@@ -18,9 +18,13 @@ package com.dnanexus;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -462,4 +466,43 @@ public final class DXJob extends DXExecution {
         return this;
     }
 
+
+    @JsonInclude(Include.NON_NULL)
+    private static class JobNewInput {
+        @JsonProperty
+        public String function;
+        @JsonProperty
+        public Map<String, Map<String, String>> systemRequirements;
+        @JsonProperty
+        public JsonNode input;
+    }
+
+    /**
+     * Deserialized output from the /job-xxxx/job_new route. Not directly accessible by users (see
+     * Describe instead).
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class JobNewOutput {
+        @JsonProperty
+        public String id;
+    }
+
+    /** Run a sub job with the specified parameters
+     */
+    public DXJob runSubJob(String function,
+                           String instanceType,
+                           JsonNode input) {
+        JobNewInput reqInput = new JobNewInput();
+
+        HashMap m = new HashMap();
+        m.put("instanceType", instanceType);
+        HashMap systemRequirements = new HashMap();
+        systemRequirements.put(function, m);
+
+        reqInput.function = function;
+        reqInput.systemRequirements = systemRequirements;
+        reqInput.input = input;
+        JobNewOutput reqOutput = DXAPI.jobNew(reqInput, JobNewOutput.class);
+        return new DXJob(reqOutput.id);
+    }
 }

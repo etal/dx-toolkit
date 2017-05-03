@@ -2425,6 +2425,7 @@ def wait(args):
 def build(args):
     from dxpy.scripts import dx_build_app
     sys.argv = ['dx build'] + sys.argv[2:]
+    print("Calling dx_build_app")
     dx_build_app.main()
 
 def process_list_of_usernames(thing):
@@ -3821,8 +3822,8 @@ from dxpy.scripts.dx_build_app import parser as build_parser
 build_parser.prog = 'dx build'
 build_parser.set_defaults(mode="applet")
 
-parser_build = subparsers.add_parser('build', help='Upload and build a new applet/app',
-                                     description='Build an applet or app object from a local source directory.  You can use ' + BOLD("dx-app-wizard") + ' to generate a skeleton directory with the necessary files.',
+parser_build = subparsers.add_parser('build', help='Upload and build a new applet/app, or a workflow',
+                                     description='Build an applet, app, or workflow object from a local source directory.  You can use ' + BOLD("dx-app-wizard") + ' to generate a skeleton directory of an app/applet with the necessary files.',
                                      prog='dx build',
                                      add_help=False,
                                      parents=[build_parser, env_args]
@@ -4215,7 +4216,7 @@ parser_ssh.add_argument('--ssh-proxy', metavar=('<address>:<port>'),
 # If ssh is run with the  supress-running-check flag, then dx won't prompt
 # the user whether they would like to terminate the currently running job
 # after they exit ssh.  Among other things, this will allow users to setup
-# ssh tunnels using dx ssh, and exit the ssh command with the tunnel still 
+# ssh tunnels using dx ssh, and exit the ssh command with the tunnel still
 # in place, and not be prompted to terminate the instance (which would close
 # the tunnel).
 parser_ssh.add_argument('--suppress-running-check', action='store_false', help=argparse.SUPPRESS, dest='check_running')
@@ -4445,14 +4446,14 @@ path_action.completer = DXPathCompleter()
 parser_wait.set_defaults(func=wait)
 register_parser(parser_wait, categories=('data', 'metadata', 'exec'))
 
-parser_get = subparsers.add_parser('get', help='Download records, applets, workflows, and files',
-                                   description='Download the contents of some types of data (records, applets, workflows, and files).  Downloading an applet or a workflow will attempt to reconstruct a source directory that can be used to rebuild it with "dx build".  Use "-o -" to direct the output to stdout.',
+parser_get = subparsers.add_parser('get', help='Download records, apps, applets, workflows, and files',
+                                   description='Download the contents of some types of data (records, apps, applets, workflows, and files).  Downloading an app, applet or a workflow will attempt to reconstruct a source directory that can be used to rebuild it with "dx build".  Use "-o -" to direct the output to stdout.',
                                    prog='dx get',
                                    parents=[env_args])
-parser_get.add_argument('path', help='Data object ID or name to access').completer = DXPathCompleter(classes=['file', 'record', 'applet', 'workflow'])
-parser_get.add_argument('-o', '--output', help='local file path where the data is to be saved ("-" indicates stdout output for objects of class file and record). If not supplied, the object\'s name on the platform will be used, along with any applicable extensions. For applet and workflow objects, if OUTPUT does not exist, the object\'s source directory will be created there; if OUTPUT is an existing directory, a new directory with the object\'s name will be created inside it.')
+parser_get.add_argument('path', help='Data object ID or name to access').completer = DXPathCompleter(classes=['file', 'record', 'applet', 'app', 'workflow'])
+parser_get.add_argument('-o', '--output', help='local file path where the data is to be saved ("-" indicates stdout output for objects of class file and record). If not supplied, the object\'s name on the platform will be used, along with any applicable extensions. For app(let) and workflow objects, if OUTPUT does not exist, the object\'s source directory will be created there; if OUTPUT is an existing directory, a new directory with the object\'s name will be created inside it.')
 parser_get.add_argument('--no-ext', help='If -o is not provided, do not add an extension to the filename', action='store_true')
-parser_get.add_argument('--omit-resources', help='When downloading an applet, omit fetching the resources associated with the applet.', action='store_true')
+parser_get.add_argument('--omit-resources', help='When downloading an app(let), omit fetching the resources associated with the app(let).', action='store_true')
 parser_get.add_argument('-f', '--overwrite', help='Overwrite the local file if necessary', action='store_true')
 parser_get.set_defaults(func=get)
 register_parser(parser_get, categories='data')

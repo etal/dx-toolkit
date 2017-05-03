@@ -30,7 +30,7 @@ import shutil
 import tempfile
 import time
 from datetime import datetime
-import dxpy, dxpy.app_builder
+import dxpy, dxpy.app_builder, dxpy.workflow_builder
 from .. import logger
 
 from ..utils import json_load_raise_on_duplicates
@@ -72,6 +72,8 @@ src_dir_action.completer = LocalCompleter()
 parser.set_defaults(mode="app")
 parser.add_argument("--app", "--create-app", help="Create an app (otherwise, creates an applet)", action="store_const",
                     dest="mode", const="app")
+parser.add_argument("--workflow", help="Create a workflow", action="store_const",
+                    dest="mode", const="workflow")
 parser.add_argument("--create-applet", help=argparse.SUPPRESS, action="store_const", dest="mode", const="applet")
 
 applet_options.add_argument("-d", "--destination", help="Specifies the destination project, destination folder, and/or name for the applet, in the form [PROJECT_NAME_OR_ID:][/[FOLDER/][NAME]]. Overrides the project, folder, and name fields of the dxapp.json, if they were supplied.", default='.')
@@ -1099,6 +1101,7 @@ def main(**kwargs):
     call dx_build_app.build_and_upload_locally which provides the real
     implementation for dx-build-app(let) but is easier to use in your program.
     """
+    print("In dx build app")
 
     if len(sys.argv) > 0:
         if sys.argv[0].endswith('dx-build-app'):
@@ -1118,6 +1121,9 @@ def main(**kwargs):
         args.src_dir = os.getcwd()
         if USING_PYTHON2:
             args.src_dir = args.src_dir.decode(sys.getfilesystemencoding())
+    # Decide whether to build an app/applet or a workflow
+    if args.mode in ["workflow"]:
+        dxpy.workflow_builder.build_workflow(args.src_dir, args)
 
     if args.mode == "app" and args.destination != '.':
         parser.error("--destination cannot be used when creating an app (only an applet)")

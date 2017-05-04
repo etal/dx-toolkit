@@ -2423,10 +2423,9 @@ def wait(args):
         err_exit('', 3)
 
 def build(args):
-    from dxpy.scripts import dx_build_app
+    from dxpy import executable_builder
     sys.argv = ['dx build'] + sys.argv[2:]
-    print("Calling dx_build_app")
-    dx_build_app.main()
+    executable_builder.build()
 
 def process_list_of_usernames(thing):
     return ['user-' + name.lower() if name != 'PUBLIC' and
@@ -3818,18 +3817,16 @@ parser_export.add_argument('exporter_args', help=fill('Arguments passed to the e
 parser_export.set_defaults(func=export)
 register_parser(parser_export, categories='data')
 
-from dxpy.scripts.dx_build_app import parser as build_parser
+from ..executable_builder import parser as build_parser
 build_parser.prog = 'dx build'
-build_parser.set_defaults(mode="applet")
-
-parser_build = subparsers.add_parser('build', help='Upload and build a new applet/app, or a workflow',
+parser_build_executable = subparsers.add_parser('build', help='Upload and build a new applet/app, or a workflow',
                                      description='Build an applet, app, or workflow object from a local source directory.  You can use ' + BOLD("dx-app-wizard") + ' to generate a skeleton directory of an app/applet with the necessary files.',
                                      prog='dx build',
                                      add_help=False,
                                      parents=[build_parser, env_args]
 )
-parser_build.set_defaults(func=build)
-register_parser(parser_build, categories='exec')
+parser_build_executable.set_defaults(func=build)
+register_parser(parser_build_executable, categories='exec')
 
 from ..asset_builder import build_asset
 parser_build_asset = subparsers.add_parser(

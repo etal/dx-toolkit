@@ -35,19 +35,9 @@ the effective destination project.
 
 from __future__ import print_function, unicode_literals, division, absolute_import
 
-import os, sys, json, subprocess, tempfile, multiprocessing
-import datetime
-import gzip
-import hashlib
-import io
-import tarfile
-import stat
+import os, sys
 
 import dxpy
-from . import logger
-from .utils import merge
-from .utils.printing import fill
-from .compat import input
 from .utils import json_load_raise_on_duplicates
 
 
@@ -59,7 +49,8 @@ class WorkflowBuilderException(Exception):
     pass
 
 def _parse_executable_spec(src_dir, json_file_name, exception):
-    """Returns the parsed contents of a json specification.
+    """
+    Returns the parsed contents of a json specification.
 
     Precondition: src_dir exists and contains the json file
 
@@ -75,10 +66,13 @@ def _parse_executable_spec(src_dir, json_file_name, exception):
             raise exception("Could not parse {} file as JSON: {}".format(json_file_name, e.message))
 
 def _add_project_to_spec(json_spec):
+    """
+    Sets destination project based on workspace env var, if not specified.
+    """
     if 'project' not in json_spec:
         json_spec['project'] = dxpy.WORKSPACE_ID
     if not json_spec['project']:
-        raise WorkflowBuilderException("project not set")
+        raise WorkflowBuilderException("destination project not set")
 
 def _inline_documentation_files(json_spec, src_dir):
     """
@@ -106,9 +100,6 @@ def _inline_documentation_files(json_spec, src_dir):
                 break
 
 def _get_unsupported_keys(keys, supported_keys):
-    """
-    type supported_keys: set
-    """
     return [key for key in keys if key not in supported_keys]
 
 def _get_validated_stage(stage, stage_index):
@@ -119,7 +110,7 @@ def _get_validated_stage(stage, stage_index):
         raise WorkflowBuilderException("executable is missing from stage number {}" + stage_index)
 
     # ignored keys
-    supported_keys = set("id", "input", "executable", "name", "folder", "input")
+    supported_keys = set(["id", "input", "executable", "name", "folder", "input"])
     unsupported_keys = _get_unsupported_keys(stage.keys(), supported_keys)
     if unsupported_keys:
         print("Warning: the following stage fields are not supported and will be ignored: {}"
@@ -127,7 +118,7 @@ def _get_validated_stage(stage, stage_index):
 
     # validate stage input
     if 'input' in stage:
-        # convert stageID.field format to $dnanexus_link that apiserver can understand
+        #TODO: validate and convert stageID.field format to $dnanexus_link that apiserver can understand
         pass
 
     return stage
@@ -162,24 +153,27 @@ def _get_validated_json(json_spec, src_dir):
 
     return json_spec
 
-def _create_workflow(workflow_spec):
+def _create_workflow(json_spec):
     """
     Creates a workflow on the platform. Returns a workflow_id,
     or None if the workflow cannot be created.
     """
     try:
-        workflow_id = dxpy.api.workflow_new(workflow_spec)["id"]
+        workflow_id = dxpy.api.workflow_new(json_spec)["id"]
     except dxpy.exceptions.DXAPIError as e:
         raise e
     return workflow_id
 
-def build_workflow(src_dir, args):
+def build(args):
     """
     Validates workflow source directory and creates a new workflow based on it.
-    Raises: WorkflowBuilderException is unsuccessful.
+    Raises: WorkflowBuilderException if the workflow cannot be created.
     """
-    json_spec = _parse_executable_spec(src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
-    validated_spec = _get_validated_json(json_spec, src_dir)
+    if args is None:
+        raise WorkflowBuilderException("arguments not provided")
+
+    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
+    validated_spec = _get_validated_json(json_spec, args.src_dir)
     print("workflow_json: " + str(validated_spec))
     workflow_id = _create_workflow(validated_spec)
     return workflow_id

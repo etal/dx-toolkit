@@ -42,6 +42,7 @@ from ..exceptions import err_exit
 from ..utils.printing import BOLD
 from ..compat import open, USING_PYTHON2, basestring
 
+APP_VERSION_RE = re.compile("^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)(-[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?(\+[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?$")
 
 class DXSyntaxError(Exception):
     def __init__(self, message):

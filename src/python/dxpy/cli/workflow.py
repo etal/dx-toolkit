@@ -55,8 +55,9 @@ def new_workflow(args):
         except:
             # But if not, just use the value directly
             pass
+
     stages = None
-    if args.stages is None:
+    if args.stages is not None:
         stages = args.stages
 
     try:

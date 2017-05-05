@@ -188,16 +188,13 @@ class DXWorkflow(DXDataObject, DXExecutable):
             return self.stages[stage_index].get("id")
 
         if re.compile('^([a-zA-Z_]|stage-)[0-9a-zA-Z_]*$').match(stage) is not None:
-            print("stage 0: " + stage)
             # check if stage id exists
             stage_id_exists = any([stg['id'] for stg in self.stages if stg.get('id') == stage])
             if stage_id_exists:
-                print("stage 1: " + stage)
                 return stage
 
-        # Doesn't look like a stage ID, so look for it as a name
+        # Doesn't look like it's a stage ID, so look for it as a name
         matching_stage_ids = [stg['id'] for stg in self.stages if stg.get('name') == stage]
-        print("stage 2: " + str(matching_stage_ids))
         if len(matching_stage_ids) == 0:
             raise DXError('DXWorkflow: the given stage identifier could not be parsed as a stage ID nor found as a stage name')
         elif len(matching_stage_ids) > 1:

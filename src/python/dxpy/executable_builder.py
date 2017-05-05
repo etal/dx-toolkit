@@ -54,7 +54,6 @@ class ExecutableBuilderException(Exception):
     """
     pass
 
-
 decode_command_line_args()
 
 parser = argparse.ArgumentParser(description="Uploads a DNAnexus App, Applet or Workflow.")
@@ -84,8 +83,6 @@ src_dir_action.completer = LocalCompleter()
 
 parser.add_argument("--app", "--create-app", help="Create an app (otherwise, creates an applet or a workflow)", action="store_const",
                     dest="mode", const="app")
-parser.add_argument("--workflow", "--create-workflow", help="Create a workflow (otherwise)", action="store_const",
-                    dest="mode", const="workflow")
 parser.add_argument("--create-applet", help=argparse.SUPPRESS, action="store_const", dest="mode", const="applet")
 
 applet_and_workflow_options.add_argument("-d", "--destination", help="Specifies the destination project, destination folder, and/or name for the applet, in the form [PROJECT_NAME_OR_ID:][/[FOLDER/][NAME]]. Overrides the project, folder, and name fields of the dxapp.json, if they were supplied.", default='.')
@@ -109,6 +106,7 @@ app_options.set_defaults(publish=False)
 app_options.add_argument("--publish", help="Publish the resulting app and make it the default.", action="store_true",
                          dest="publish")
 app_options.add_argument("--no-publish", help=argparse.SUPPRESS, action="store_false", dest="publish")
+
 
 # --[no-]remote
 parser.set_defaults(remote=False)
@@ -171,7 +169,8 @@ parser.add_argument("--run", help="Run the app or applet after building it (opti
 app_options.add_argument("--region", action="append", help="Enable the app in this region. This flag can be specified multiple times to enable the app in multiple regions. If --region is not specified, then the enabled region(s) will be determined by 'regionalOptions' in dxapp.json, or the project context.")
 
 def _get_mode(src_dir):
-    """Returns an app/applet builder or a workflow builder based on whether
+    """
+    Returns an app/applet builder or a workflow builder based on whether
     the source directory contains dxapp.json or dxworkflow.json.
 
     Raises ExecutableBuilderException (exit code 2) if this cannot be done.
@@ -215,6 +214,19 @@ def _handle_arg_conflicts(args):
     if args.run and args.remote and args.mode == 'app':
         parser.error("Options --remote, --app, and --run cannot all be specified together. Try removing --run and then separately invoking dx run.")
 
+    # options not supported by workflow building
+    #TODO: for better experience report all the unsupported options at once
+    print("args: " + str(args))
+    if args.mode == "workflow":
+         if args.ensure_upload:
+             parser.error("Option --ensure-upload is not supported for workflows.")
+         if args.force_symlinks:
+             parser.error("Option --force-symlinks is not supported for workflows.")
+         if args.publish:
+             parser.error("Option --publish is not yet supported for workflows.")
+
+#args: Namespace(archive=False, bill_to=None, check_syntax=True, confirm=True, destination=u'.', dry_run=False, dx_toolkit_autodep=u'stable', ensure_upload=False, extra_args=None, force_symlinks=False, json=False, mode=u'workflow', overwrite=False, parallel_build=True, publish=False, region=None, remote=False, run=None, src_dir=u'/home/commandlinegirl/repos/dx-toolkit/workflow-with-applet', update=True, use_temp_build_project=True, version_autonumbering=True, version_override=None, watch=True)
+
 def build(**kwargs):
 
     if len(sys.argv) > 0:
@@ -227,7 +239,6 @@ def build(**kwargs):
             warn_mesg += 'Please update your scripts.'
             logging.warn(warn_mesg)
 
-    # extract args
     if len(kwargs) == 0:
         args = parser.parse_args()
     else:
@@ -237,20 +248,17 @@ def build(**kwargs):
         parser.error('Authentication required to build an executable on the platform; please run "dx login" first')
 
     args.src_dir = _get_validated_source_dir(args)
-    _handle_arg_conflicts(args)
 
     # If mode is not specified, determine it by the json file
     if args.mode is None:
         args.mode = _get_mode(args.src_dir)
 
-    print("mode: " + args.mode)
+    _handle_arg_conflicts(args)
+
     if args.mode in ("app", "applet"):
         dx_build_app.build(args)
     elif args.mode == "workflow":
         workflow_builder.build(args)
     else:
-        print("Mode is not set, I don't know what to build. Accepted values: app, applet, workflow")
+        print("--mode is not set, I don't know what to build. Accepted values: app, applet, workflow")
     return
-
-if __name__ == '__main__':
-    main()

@@ -1266,7 +1266,7 @@ class TestDXWorkflow(unittest.TestCase):
     codeSpec = '''
 @dxpy.entry_point('main')
 def main(number):
-raise # Ensure that the applet fails
+    raise # Ensure that the applet fails
 '''
 
     def setUp(self):
@@ -1302,7 +1302,7 @@ raise # Ensure that the applet fails
                      inputSpec=[{"name": "number", "class": "int"},
                                 {"name": "othernumber", "class": "int"}],
                      outputSpec=[{"name": "number", "class": "int"}],
-                     runSpec={"code": codeSpec,
+                     runSpec={"code": self.codeSpec,
                                "interpreter": "python2.7"})
         stage_id = dxpy.api.workflow_add_stage(dxworkflow.get_id(),
                                                {"editVersion": 0,
@@ -1448,7 +1448,7 @@ raise # Ensure that the applet fails
                      dxapi="1.04",
                      inputSpec=[{"name": "number", "class": "int"}],
                      outputSpec=[{"name": "number", "class": "int"}],
-                     runSpec={"code": codeSpec,
+                     runSpec={"code": self.codeSpec,
                                "interpreter": "python2.7"})
         dxworkflow.add_stage(dxapplet, name='stagename')
 
@@ -1584,7 +1584,7 @@ raise # Ensure that the applet fails
         self.assertEqual(dxworkflow.editVersion, 5)
         self.assertEqual(len(dxworkflow.stages), 1)
         self.assertEqual(dxworkflow.stages[0]["id"], second_stage)
-        with self.assertRaises(DXError):
+        with self.assertRaises(DXAPIError):
             dxworkflow.remove_stage(first_stage) # should already have been removed
         removed_stage = dxworkflow.remove_stage(second_stage, edit_version=5)
         self.assertEqual(removed_stage, second_stage)

@@ -3591,7 +3591,7 @@ class TestDXClientWorkflow(DXTestCase):
 
         # remove some bad stage ID
         with self.assertSubprocessFailure(stderr_regexp="nor found as a stage name", exit_code=3):
-            run("dx update stage /myworkflow badstageID --name foo")
+            run("dx update stage /myworkflow bad.stageID --name foo")
 
         # remove nonexistent stage
         with self.assertSubprocessFailure(stderr_regexp="ResourceNotFound", exit_code=3):

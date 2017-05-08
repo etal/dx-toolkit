@@ -29,8 +29,8 @@ import dxpy
 from dxpy.compat import str, USING_PYTHON2
 
 _run_all_tests = 'DXTEST_FULL' in os.environ
-TEST_AZURE = 0 #((os.environ.get('DXTEST_AZURE', '').startswith('azure:') and os.environ['DXTEST_AZURE']) or
-              #(os.environ.get('DXTEST_AZURE') and 'azure:westus'))
+TEST_AZURE = ((os.environ.get('DXTEST_AZURE', '').startswith('azure:') and os.environ['DXTEST_AZURE']) or
+              (os.environ.get('DXTEST_AZURE') and 'azure:westus'))
 TEST_ISOLATED_ENV = _run_all_tests or 'DXTEST_ISOLATED_ENV' in os.environ
 TEST_ENV = _run_all_tests or 'DXTEST_ENV' in os.environ
 TEST_DX_DOCKER = 'DXTEST_DOCKER' in os.environ

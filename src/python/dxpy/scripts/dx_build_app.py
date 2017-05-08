@@ -1005,7 +1005,6 @@ def main(**kwargs):
     call dx_build_app.build_and_upload_locally which provides the real
     implementation for dx-build-app(let) but is easier to use in your program.
     """
-    print("Running dx build app(let)")
     if len(sys.argv) > 0:
         if sys.argv[0].endswith('dx-build-app'):
             logging.warn('Warning: dx-build-app has been replaced with "dx build --create-app". Please update your scripts.')

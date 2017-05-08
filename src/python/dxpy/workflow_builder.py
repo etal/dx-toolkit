@@ -182,9 +182,7 @@ def build(args, _parser):
     if args is None:
         raise Exception("arguments not provided")
 
-    print("validating wf")
     json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
     validated_spec = _get_validated_json(json_spec, args)
-    print("workflow_json: " + str(validated_spec))
     workflow_id = _create_workflow(validated_spec)
     return workflow_id

@@ -1616,7 +1616,6 @@ def main(number):
                       ['stagename2', second_stage]]
         for tc in test_cases:
             stage_desc = dxworkflow.get_stage(tc[0])
-            print(stage_desc)
             self.assertEqual(stage_desc['id'], tc[1])
 
         # Errors

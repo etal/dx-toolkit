@@ -2496,8 +2496,12 @@ def build(args):
         elif args.mode == "workflow":
             workflow_builder.build(args, build_parser)
         else:
-            print("--mode is not set, I don't know what to build. Accepted values: app, applet, workflow")
+            msg = "I don't know what to build. Accepted options: --app, --applet, --workflow."
+            msg += " If it is not provided, an attempt is made to build either an applet or a workflow, depending on"
+            msg += " whether a dxapp.json or dxworkflow.json file is found in the source directory, respectively."
+            print(msg)
     except Exception as e:
+        raise e
         print("Error: %s" % (e.message,), file=sys.stderr)
         sys.exit(3)
 
@@ -4005,8 +4009,9 @@ src_dir_action.completer = LocalCompleter()
 build_parser.add_argument("--app", "--create-app", help="Create an app (otherwise, creates an applet or a workflow)", action="store_const",
                     dest="mode", const="app")
 build_parser.add_argument("--create-applet", help=argparse.SUPPRESS, action="store_const", dest="mode", const="applet")
+build_parser.add_argument("--create-workflow", help=argparse.SUPPRESS, action="store_const", dest="mode", const="workflow")
 
-applet_and_workflow_options.add_argument("-d", "--destination", help="Specifies the destination project, destination folder, and/or name for the applet, in the form [PROJECT_NAME_OR_ID:][/[FOLDER/][NAME]]. Overrides the project, folder, and name fields of the dxapp.json, if they were supplied.", default='.')
+applet_and_workflow_options.add_argument("-d", "--destination", help="Specifies the destination project, destination folder, and/or name for the applet, in the form [PROJECT_NAME_OR_ID:][/[FOLDER/][NAME]]. Overrides the project, folder, and name fields of the dxapp.json or dxworkflow.json, if they were supplied.", default='.')
 
 # --[no-]dry-run
 #
@@ -4035,9 +4040,9 @@ build_parser.add_argument("--remote", help="Build the app remotely by uploading 
 build_parser.add_argument("--no-watch", help="Don't watch the real-time logs of the remote builder. (This option only applicable if --remote was specified).", action="store_false", dest="watch")
 build_parser.add_argument("--no-remote", help=argparse.SUPPRESS, action="store_false", dest="remote")
 
-applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s)/workflow(s) of the same name in the destination folder.",
                             action="store_true", default=False)
-applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s)/workflow(s) of the same name in the destination folder.",
                             action="store_true", default=False)
 build_parser.add_argument("-v", "--version", help="Override the version number supplied in the manifest.", default=None,
                     dest="version_override", metavar='VERSION')

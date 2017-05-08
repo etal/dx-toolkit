@@ -14,13 +14,23 @@
 #   License for the specific language governing permissions and limitations
 #   under the License.
 
-'''
+"""
 Workflow Builder Library
 +++++++++++++++++++
 
 Contains utility methods useful for deploying workflows onto the platform.
 
-'''
+You can specify the destination project in the following ways (with the earlier
+ones taking precedence):
+
+* Supply the *project* argument to :func:`upload_resources()` or
+  :func:`upload_applet()`.
+* Supply the 'project' attribute in your ``dxapp.json``.
+* Set the ``DX_WORKSPACE_ID`` environment variable (when running in a job context).
+
+You can use the function :func:`get_destination_project` to determine
+the effective destination project.
+"""
 
 from __future__ import print_function, unicode_literals, division, absolute_import
 import os, sys
@@ -65,23 +75,48 @@ def _parse_executable_spec(src_dir, json_file_name, exception):
             raise exception("Could not parse {} file as JSON: {}".format(
                             json_file_name, e.message))
 
-def _get_destination_project(json_spec, args):
+def _get_destination_project(json_spec, args, build_project_id=None):
     """
-    Returns destination project based on workspace env var, if not specified.
-    The order of precedence is:
+    Returns destination project in which the workflow should be created.
+    In can be set in multiple ways whose order of precedence is:
     1. --destination, -d option supplied with `dx build`,
     2. 'project' specified in the json file,
     3. project set in the dxpy.WORKSPACE_ID environment variable.
     """
-    # TODO: need to parse the destination, extract the code part around destination_override for
-    # app(let)s - dx_build_app.parse_destination
-    #if args.destination:
-#        return args.destination
+    if build_project_id:
+        return build_project_id
     if 'project' in json_spec:
         return json_spec['project']
     if dxpy.WORKSPACE_ID:
         return dxpy.WORKSPACE_ID
-    raise WorkflowBuilderException("destination project not set")
+    error_msg = "Can't create a workflow without specifying a destination project; "
+    error_msg += "please use the -d/--destination flag to explicitly specify a project"
+    raise WorkflowBuilderException(error_msg)
+
+def _get_destination_folder(json_spec, folder_name=None):
+    """
+    Returns destination project in which the workflow should be created.
+    It can be set in the json specification or by --destination option supplied
+    with `dx build`.
+    The order of precedence is:
+    1. --destination, -d option,
+    2. 'folder' specified in the json file.
+    """
+    dest_folder = folder_name or json_spec.get('folder') or '/'
+    if not dest_folder.endswith('/'):
+        dest_folder = dest_folder + '/'
+    return dest_folder
+
+def _get_workflow_name(json_spec, workflow_name=None):
+    """
+    Returns the name of the workflow to be created. It can be set in the json
+    specification or by --destination option supplied with `dx build`.
+    The order of precedence is:
+    1. --destination, -d option,
+    2. 'name' specified in the json file.
+    If not provided, returns empty string.
+    """
+    return workflow_name or json_spec.get('name') or ''
 
 def _inline_documentation_files(json_spec, src_dir):
     """
@@ -101,12 +136,13 @@ def _inline_documentation_files(json_spec, src_dir):
                 json_spec['description'] = fh.read()
 
     # Inline developerNotes from Readme.developer.md
-    if 'developerNotes' not in json_spec:
-        for filename in 'README.developer.md', 'Readme.developer.md', 'readme.developer.md':
-            if os.path.exists(os.path.join(src_dir, filename)):
-                with open(os.path.join(src_dir, filename)) as fh:
-                    json_spec['developerNotes'] = fh.read()
-                break
+    # TODO: add developerNotes field to workflow/new
+    # if 'developerNotes' not in json_spec:
+    #     for filename in 'README.developer.md', 'Readme.developer.md', 'readme.developer.md':
+    #         if os.path.exists(os.path.join(src_dir, filename)):
+    #             with open(os.path.join(src_dir, filename)) as fh:
+    #                 json_spec['developerNotes'] = fh.read()
+    #             break
 
 def _get_unsupported_keys(keys, supported_keys):
     return [key for key in keys if key not in supported_keys]
@@ -140,20 +176,30 @@ def  _get_validated_stages(stages):
         validated_stages.append(_get_validated_stage(stage, index))
     return validated_stages
 
+
 def _get_validated_json(json_spec, args):
+    """
+    Validates dxworkflow.json and returns the json that can be sent with the /workflow/new API request.
+    """
     if not json_spec:
         return
     if not args:
         return
 
-    supported_keys = set(["project", "name", "outputFolder", "stages"])
+    supported_keys = set(["project", "folder", "name", "outputFolder", "stages"])
     unsupported_keys = _get_unsupported_keys(json_spec.keys(), supported_keys)
     if unsupported_keys:
         print("Warning: the following root level fields are not supported and will be ignored: {}"
               .format(",".join(unsupported_keys)))
 
     _inline_documentation_files(json_spec, args.src_dir)
-    json_spec['project'] = _get_destination_project(json_spec, args)
+
+    override_project_id, override_folder, override_workflow_name = None, None, None
+    if (args.destination):
+        override_project_id, override_folder, override_workflow_name = dxpy.executable_builder.parse_destination(args.destination)
+    json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
+    json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
+    json_spec['name'] = _get_workflow_name(json_spec, override_workflow_name)
 
     if 'stages' in json_spec:
         json_spec['stages'] = _get_validated_stages(json_spec['stages'])
@@ -182,7 +228,10 @@ def build(args, _parser):
     if args is None:
         raise Exception("arguments not provided")
 
-    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
-    validated_spec = _get_validated_json(json_spec, args)
-    workflow_id = _create_workflow(validated_spec)
-    return workflow_id
+    try:
+        json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
+        validated_spec = _get_validated_json(json_spec, args)
+        workflow_id = _create_workflow(validated_spec)
+        return workflow_id
+    except Exception as e:
+        print(e)

@@ -30,14 +30,16 @@ import shutil
 import tempfile
 import time
 from datetime import datetime
-import dxpy, dxpy.app_builder, dxpy.workflow_builder
+import dxpy
+import dxpy.app_builder
+import dxpy.workflow_builder
+import dxpy.executable_builder
 from .. import logger
 
 from ..utils import json_load_raise_on_duplicates
 from ..utils.resolver import resolve_path, check_folder_exists, ResolutionError, is_container_id
 from ..utils.completer import LocalCompleter
 from ..app_categories import APP_CATEGORIES
-from ..cli import try_call
 from ..exceptions import err_exit
 from ..utils.printing import BOLD
 from ..compat import open, USING_PYTHON2, basestring
@@ -78,28 +80,7 @@ def _get_version_suffix(src_dir, version):
     return _get_timestamp_version_suffix(version)
 
 def parse_destination(dest_str):
-    """
-    Parses dest_str, which is (roughly) of the form
-    PROJECT:/FOLDER/NAME, and returns a tuple (project, folder, name)
-    """
-    # Interpret strings of form "project-XXXX" (no colon) as project. If
-    # we pass these through to resolve_path they would get interpreted
-    # as folder names...
-    if is_container_id(dest_str):
-        return (dest_str, None, None)
-
-    # ...otherwise, defer to resolver.resolve_path. This handles the
-    # following forms:
-    #
-    # /FOLDER/
-    # /ENTITYNAME
-    # /FOLDER/ENTITYNAME
-    # [PROJECT]:
-    # [PROJECT]:/FOLDER/
-    # [PROJECT]:/ENTITYNAME
-    # [PROJECT]:/FOLDER/ENTITYNAME
-    return try_call(resolve_path, dest_str)
-
+    return dxpy.executable_builder.parse_destination(dest_str)
 
 def _check_suggestions(app_json, publish=False):
     """

@@ -193,7 +193,7 @@ class DXWorkflow(DXDataObject, DXExecutable):
             if stage_id_exists:
                 return stage
 
-        # Doesn't look like a stage ID, so look for it as a name
+        # A stage with the provided ID can't be found in the workflow, so look for it as a name
         matching_stage_ids = [stg['id'] for stg in self.stages if stg.get('name') == stage]
         if len(matching_stage_ids) == 0:
             raise DXError('DXWorkflow: the given stage identifier could not be found as a stage ID nor as a stage name')

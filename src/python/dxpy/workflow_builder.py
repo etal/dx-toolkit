@@ -39,12 +39,22 @@ def _parse_executable_spec(src_dir, json_file_name, exception):
     """
     Returns the parsed contents of a json specification.
 
-    Precondition: src_dir exists and contains the json file
+    Precondition: src_dir exists
 
     Raises exception (exit code 3) if this cannot be done.
     """
+
+    if not os.path.exists(os.path.join(src_dir, "dxworkflow.json")):
+        raise WorkflowBuilderException("Directory %s does not contain dxworkflow.json: not a valid DNAnexus app source directory" % src_dir)
+    with open(os.path.join(src_dir, "dxworkflow.json")) as app_desc:
+        try:
+            return json_load_raise_on_duplicates(app_desc)
+        except Exception as e:
+            raise WorkflowBuilderException("Could not parse dxapp.json file as JSON: " + e.message)
+
     if not os.path.isdir(src_dir):
         parser.error("{} is not a directory".format(src_dir))
+
 
     with open(os.path.join(src_dir, json_file_name)) as desc:
         try:

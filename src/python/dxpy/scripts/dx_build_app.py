@@ -44,6 +44,8 @@ from ..compat import open, USING_PYTHON2, basestring
 
 APP_VERSION_RE = re.compile("^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)(-[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?(\+[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?$")
 
+parser = None
+
 class DXSyntaxError(Exception):
     def __init__(self, message):
         self.message = message
@@ -974,7 +976,9 @@ def _build_app(args, extra_args):
                                  publish=args.publish, dx_toolkit_autodep=args.dx_toolkit_autodep,
                                  region=region, watch=args.watch, **more_kwargs)
 
-def build(args):
+def build(args, _parser):
+    global parser
+    parser = _parser
     executable_id = _build_app(args,
                                json.loads(args.extra_args) if args.extra_args else {})
     if args.run is not None:
@@ -1001,7 +1005,7 @@ def main(**kwargs):
     call dx_build_app.build_and_upload_locally which provides the real
     implementation for dx-build-app(let) but is easier to use in your program.
     """
-
+    print("Running dx build app(let)")
     if len(sys.argv) > 0:
         if sys.argv[0].endswith('dx-build-app'):
             logging.warn('Warning: dx-build-app has been replaced with "dx build --create-app". Please update your scripts.')

@@ -58,8 +58,6 @@ decode_command_line_args()
 
 parser = argparse.ArgumentParser(description="Uploads a DNAnexus App, Applet or Workflow.")
 
-APP_VERSION_RE = re.compile("^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)(-[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?(\+[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?$")
-
 app_options = parser.add_argument_group('options for creating apps', '(Only valid when --app/--create-app is specified)')
 applet_and_workflow_options = parser.add_argument_group('options for creating applets or workflows', '(Only valid when --app/--create-app is NOT specified)')
 
@@ -170,22 +168,18 @@ app_options.add_argument("--region", action="append", help="Enable the app in th
 
 def _get_mode(src_dir):
     """
-    Returns an app/applet builder or a workflow builder based on whether
+    Returns an applet or a workflow mode based on whether
     the source directory contains dxapp.json or dxworkflow.json.
 
-    Raises ExecutableBuilderException (exit code 2) if this cannot be done.
+    Raises ExecutableBuilderException (exit code 3) if this cannot be done.
     """
     if not os.path.isdir(src_dir):
         parser.error("{} is not a directory".format(src_dir))
 
-    if os.path.exists(os.path.join(src_dir, "dxapp.json")):
-        return "app"
-    elif os.path.exists(os.path.join(src_dir, "dxworkflow.json")):
+    if os.path.exists(os.path.join(src_dir, "dxworkflow.json")):
         return "workflow"
     else:
-        raise ExecutableBuilderException(
-            "Directory {} does not contain dxapp.json nor dxworkflow.json: not a valid DNAnexus source directory"
-            .format(src_dir))
+        return "applet"
 
 def _get_validated_source_dir(args):
     src_dir = args.src_dir
@@ -216,7 +210,7 @@ def _handle_arg_conflicts(args):
 
     # options not supported by workflow building
     #TODO: for better experience report all the unsupported options at once
-    print("args: " + str(args))
+    #print("args: " + str(args))
     if args.mode == "workflow":
          if args.ensure_upload:
              parser.error("Option --ensure-upload is not supported for workflows.")
@@ -228,7 +222,6 @@ def _handle_arg_conflicts(args):
 #args: Namespace(archive=False, bill_to=None, check_syntax=True, confirm=True, destination=u'.', dry_run=False, dx_toolkit_autodep=u'stable', ensure_upload=False, extra_args=None, force_symlinks=False, json=False, mode=u'workflow', overwrite=False, parallel_build=True, publish=False, region=None, remote=False, run=None, src_dir=u'/home/commandlinegirl/repos/dx-toolkit/workflow-with-applet', update=True, use_temp_build_project=True, version_autonumbering=True, version_override=None, watch=True)
 
 def build(**kwargs):
-
     if len(sys.argv) > 0:
         if sys.argv[0].endswith('dx-build-app'):
             warn_mesg = 'Warning: dx-build-app has been replaced with "dx build --create-app".'
@@ -247,18 +240,24 @@ def build(**kwargs):
     if dxpy.AUTH_HELPER is None and not args.dry_run:
         parser.error('Authentication required to build an executable on the platform; please run "dx login" first')
 
-    args.src_dir = _get_validated_source_dir(args)
+    try:
+        args.src_dir = _get_validated_source_dir(args)
 
-    # If mode is not specified, determine it by the json file
-    if args.mode is None:
-        args.mode = _get_mode(args.src_dir)
+        # If mode is not specified, determine it by the json file
+        if args.mode is None:
+            args.mode = _get_mode(args.src_dir)
 
-    _handle_arg_conflicts(args)
+        _handle_arg_conflicts(args)
 
-    if args.mode in ("app", "applet"):
-        dx_build_app.build(args)
-    elif args.mode == "workflow":
-        workflow_builder.build(args)
-    else:
-        print("--mode is not set, I don't know what to build. Accepted values: app, applet, workflow")
-    return
+        if args.mode in ("app", "applet"):
+            dx_build_app.build(args, parser)
+        elif args.mode == "workflow":
+            workflow_builder.build(args)
+        else:
+            print("--mode is not set, I don't know what to build. Accepted values: app, applet, workflow")
+    except ExecutableBuilderException as e:
+        # ExecutableBuilderException represents errors during app, applet, or workflow building
+        # that could reasonably have been anticipated by the user.
+        print("Error: %s" % (e.message,), file=sys.stderr)
+
+        sys.exit(3)

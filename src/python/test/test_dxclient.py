@@ -3450,11 +3450,13 @@ class TestDXClientWorkflow(DXTestCase):
             run("dx remove stage /myworkflow 5")
 
         # remove some bad stage ID
-        with self.assertSubprocessFailure(stderr_regexp="nor found as a stage name", exit_code=3):
+        with self.assertSubprocessFailure(
+                                          stderr_regexp="could not be found as a stage ID nor as a stage name",
+                                          exit_code=3):
             run("dx remove stage /myworkflow badstageID")
 
         # remove nonexistent stage
-        with self.assertSubprocessFailure(stderr_regexp="ResourceNotFound", exit_code=3):
+        with self.assertSubprocessFailure(stderr_regexp="DXError", exit_code=3):
             run("dx remove stage /myworkflow stage-123456789012345678901234")
 
     def test_dx_update_workflow(self):
@@ -3590,11 +3592,13 @@ class TestDXClientWorkflow(DXTestCase):
             run("dx update stage /myworkflow 5 --name foo")
 
         # remove some bad stage ID
-        with self.assertSubprocessFailure(stderr_regexp="nor found as a stage name", exit_code=3):
+        with self.assertSubprocessFailure(
+                                          stderr_regexp="could not be found as a stage ID nor as a stage name",
+                                          exit_code=3):
             run("dx update stage /myworkflow bad.stageID --name foo")
 
         # remove nonexistent stage
-        with self.assertSubprocessFailure(stderr_regexp="ResourceNotFound", exit_code=3):
+        with self.assertSubprocessFailure(stderr_regexp="DXError", exit_code=3):
             run("dx update stage /myworkflow stage-123456789012345678901234 --name foo")
 
 

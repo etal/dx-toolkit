@@ -28,6 +28,8 @@ import os, sys
 import dxpy
 from .utils import json_load_raise_on_duplicates
 
+parser = None
+
 class WorkflowBuilderException(Exception):
     """
     This exception is raised by the methods in this module when workflow
@@ -73,8 +75,8 @@ def _get_destination_project(json_spec, args):
     """
     # TODO: need to parse the destination, extract the code part around destination_override for
     # app(let)s - dx_build_app.parse_destination
-    if args.destination:
-        return args.destination
+    #if args.destination:
+#        return args.destination
     if 'project' in json_spec:
         return json_spec['project']
     if dxpy.WORKSPACE_ID:
@@ -170,16 +172,19 @@ def _create_workflow(json_spec):
         raise e
     return workflow_id
 
-def build(args):
+def build(args, _parser):
     """
     Validates workflow source directory and creates a new workflow based on it.
     Raises: WorkflowBuilderException if the workflow cannot be created.
     """
+    global parser
+    parser = _parser
     if args is None:
         raise Exception("arguments not provided")
 
+    print("validating wf")
     json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
     validated_spec = _get_validated_json(json_spec, args)
-    #print("workflow_json: " + str(validated_spec))
+    print("workflow_json: " + str(validated_spec))
     workflow_id = _create_workflow(validated_spec)
     return workflow_id

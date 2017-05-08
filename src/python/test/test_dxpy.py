@@ -1584,7 +1584,7 @@ def main(number):
         self.assertEqual(dxworkflow.editVersion, 5)
         self.assertEqual(len(dxworkflow.stages), 1)
         self.assertEqual(dxworkflow.stages[0]["id"], second_stage)
-        with self.assertRaises(DXAPIError):
+        with self.assertRaises(DXError):
             dxworkflow.remove_stage(first_stage) # should already have been removed
         removed_stage = dxworkflow.remove_stage(second_stage, edit_version=5)
         self.assertEqual(removed_stage, second_stage)

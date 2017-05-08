@@ -187,22 +187,20 @@ class DXWorkflow(DXDataObject, DXExecutable):
                               ' stage(s), and the numerical value of the given stage identifier is out of range')
             return self.stages[stage_index].get("id")
 
-        # First check stage name
-        # If the stage is not found among names, check the ID
-        # If the stage corresonds to a name of one stage and id of another stage, the name is chosen with a warning (or should we throw an exception?)
+        if re.compile('^([a-zA-Z_]|stage-)[0-9a-zA-Z_]*$').match(stage) is not None:
+            # Check if there exists a stage with this stage id
+            stage_id_exists = any([stg['id'] for stg in self.stages if stg.get('id') == stage])
+            if stage_id_exists:
+                return stage
 
-        if re.compile('^([a-zA-Z_]|stage-)[0-9a-zA-Z_]*$').match(stage) is None:
-            # Doesn't look like a stage ID, so look for it as a name
-            matching_stage_ids = [stg['id'] for stg in self.stages if stg.get('name') == stage]
-            if len(matching_stage_ids) == 0:
-                raise DXError('DXWorkflow: the given stage identifier could not be parsed as a stage ID nor found as a stage name')
-            elif len(matching_stage_ids) > 1:
-                raise DXError('DXWorkflow: more than one workflow stage was found to have the name "' + stage + '"')
-            else:
-                return matching_stage_ids[0]
+        # Doesn't look like a stage ID, so look for it as a name
+        matching_stage_ids = [stg['id'] for stg in self.stages if stg.get('name') == stage]
+        if len(matching_stage_ids) == 0:
+            raise DXError('DXWorkflow: the given stage identifier could not be found as a stage ID nor as a stage name')
+        elif len(matching_stage_ids) > 1:
+            raise DXError('DXWorkflow: more than one workflow stage was found to have the name "' + stage + '"')
         else:
-            # Already a stage ID
-            return stage
+            return matching_stage_ids[0]
 
     def add_stage(self, executable, stage_id=None, name=None, folder=None, stage_input=None, instance_type=None,
                   edit_version=None, **kwargs):

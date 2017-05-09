@@ -36,6 +36,7 @@ from .utils.resolver import resolve_path, is_container_id
 from .cli import try_call
 import os
 
+
 def parse_destination(dest_str):
     """
     Parses dest_str, which is (roughly) of the form
@@ -58,6 +59,7 @@ def parse_destination(dest_str):
     # [PROJECT]:/ENTITYNAME
     # [PROJECT]:/FOLDER/ENTITYNAME
     return try_call(resolve_path, dest_str)
+
 
 def inline_documentation_files(json_spec, src_dir):
     """

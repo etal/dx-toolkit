@@ -46,7 +46,7 @@ from ..compat import open, USING_PYTHON2, basestring
 
 APP_VERSION_RE = re.compile("^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)(-[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?(\+[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?$")
 
-parser = None
+parser = argparse.ArgumentParser(description="Uploads a DNAnexus App.")
 
 class DXSyntaxError(Exception):
     def __init__(self, message):
@@ -957,13 +957,11 @@ def _build_app(args, extra_args):
                                  publish=args.publish, dx_toolkit_autodep=args.dx_toolkit_autodep,
                                  region=region, watch=args.watch, **more_kwargs)
 
-def build(args, _parser):
-    global parser
-    parser = _parser
+
+def build(args):
     executable_id = _build_app(args,
                                json.loads(args.extra_args) if args.extra_args else {})
     if args.run is not None:
-
         if executable_id is None:
             raise AssertionError('Expected executable_id to be set here')
 

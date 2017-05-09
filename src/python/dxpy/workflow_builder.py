@@ -19,27 +19,15 @@ Workflow Builder Library
 +++++++++++++++++++
 
 Contains utility methods useful for deploying workflows onto the platform.
-
-You can specify the destination project in the following ways (with the earlier
-ones taking precedence):
-
-* Supply the *project* argument to :func:`upload_resources()` or
-  :func:`upload_applet()`.
-* Supply the 'project' attribute in your ``dxapp.json``.
-* Set the ``DX_WORKSPACE_ID`` environment variable (when running in a job context).
-
-You can use the function :func:`get_destination_project` to determine
-the effective destination project.
 """
 
 from __future__ import print_function, unicode_literals, division, absolute_import
-import os, sys
+import os
 import json
 
 import dxpy
 from .utils import json_load_raise_on_duplicates
 
-parser = None
 
 class WorkflowBuilderException(Exception):
     """
@@ -48,7 +36,8 @@ class WorkflowBuilderException(Exception):
     """
     pass
 
-def _parse_executable_spec(src_dir, json_file_name, exception):
+
+def _parse_executable_spec(src_dir, json_file_name, exception, parser):
     """
     Returns the parsed contents of a json specification.
 
@@ -58,7 +47,9 @@ def _parse_executable_spec(src_dir, json_file_name, exception):
     """
 
     if not os.path.exists(os.path.join(src_dir, "dxworkflow.json")):
-        raise WorkflowBuilderException("Directory %s does not contain dxworkflow.json: not a valid DNAnexus app source directory" % src_dir)
+        raise WorkflowBuilderException(
+            "Directory {} does not contain dxworkflow.json: not a valid DNAnexus app source directory"
+            .format(src_dir))
     with open(os.path.join(src_dir, "dxworkflow.json")) as app_desc:
         try:
             return json_load_raise_on_duplicates(app_desc)
@@ -68,13 +59,13 @@ def _parse_executable_spec(src_dir, json_file_name, exception):
     if not os.path.isdir(src_dir):
         parser.error("{} is not a directory".format(src_dir))
 
-
     with open(os.path.join(src_dir, json_file_name)) as desc:
         try:
             return json_load_raise_on_duplicates(desc)
         except Exception as e:
             raise exception("Could not parse {} file as JSON: {}".format(
                             json_file_name, e.message))
+
 
 def _get_destination_project(json_spec, args, build_project_id=None):
     """
@@ -94,6 +85,7 @@ def _get_destination_project(json_spec, args, build_project_id=None):
     error_msg += "please use the -d/--destination flag to explicitly specify a project"
     raise WorkflowBuilderException(error_msg)
 
+
 def _get_destination_folder(json_spec, folder_name=None):
     """
     Returns destination project in which the workflow should be created.
@@ -108,6 +100,7 @@ def _get_destination_folder(json_spec, folder_name=None):
         dest_folder = dest_folder + '/'
     return dest_folder
 
+
 def _get_workflow_name(json_spec, workflow_name=None):
     """
     Returns the name of the workflow to be created. It can be set in the json
@@ -119,8 +112,10 @@ def _get_workflow_name(json_spec, workflow_name=None):
     """
     return workflow_name or json_spec.get('name') or ''
 
+
 def _get_unsupported_keys(keys, supported_keys):
     return [key for key in keys if key not in supported_keys]
+
 
 def _get_validated_stage(stage, stage_index):
     # required keys
@@ -141,8 +136,10 @@ def _get_validated_stage(stage, stage_index):
 
     return stage
 
-def  _get_validated_stages(stages):
+
+def _get_validated_stages(stages):
     """
+    Validates stages of the workflow as an array of mappings.
     """
     if not isinstance(stages, list):
         raise WorkflowBuilderException("Stages must be specified as an array or mappings")
@@ -182,6 +179,7 @@ def _get_validated_json(json_spec, args):
 
     return json_spec
 
+
 def _create_workflow(json_spec):
     """
     Creates a closed workflow on the platform.
@@ -194,25 +192,23 @@ def _create_workflow(json_spec):
         raise e
     return workflow_id
 
-def build(args, _parser):
+
+def build(args, parser):
     """
     Validates workflow source directory and creates a new workflow based on it.
     Raises: WorkflowBuilderException if the workflow cannot be created.
     """
-    global parser
-    parser = _parser
+
     if args is None:
         raise Exception("arguments not provided")
-    if _parser is None:
-        raise Exception("parser not provided")
 
     json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json",
-                                           dxpy.workflow_builder.WorkflowBuilderException)
+                                       dxpy.workflow_builder.WorkflowBuilderException, parser)
     validated_spec = _get_validated_json(json_spec, args)
     workflow_id = _create_workflow(validated_spec)
     if args.json:
         output = dxpy.api.app_describe(workflow_id)
     else:
-        output ={'id': workflow_id}
+        output = {'id': workflow_id}
     if output is not None:
         print(json.dumps(output))

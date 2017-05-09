@@ -2490,7 +2490,8 @@ def build(args):
                 '--extra-args': args.extra_args}
             used_unsupported_options = {k: v for k, v in unsupported_options.items() if v}
             if used_unsupported_options:
-                build_parser.error("Options {} are not supported with workflows".format(", ".join(used_unsupported_options)))
+                build_parser.error("Options {} are not supported with workflows"
+                                   .format(", ".join(used_unsupported_options)))
 
     args = build_parser.parse_args()
 
@@ -2507,7 +2508,7 @@ def build(args):
         handle_arg_conflicts(args)
 
         if args.mode in ("app", "applet"):
-            dx_build_app.build(args, build_parser)
+            dx_build_app.build(args)
         elif args.mode == "workflow":
             workflow_builder.build(args, build_parser)
         else:

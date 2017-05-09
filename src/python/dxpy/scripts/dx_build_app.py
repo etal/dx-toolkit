@@ -80,7 +80,7 @@ def _get_version_suffix(src_dir, version):
     return _get_timestamp_version_suffix(version)
 
 def parse_destination(dest_str):
-    return dxpy.executable_builder.parse_destination(dest_str)
+    return dxpy.executable_builder.get_parsed_destination(dest_str)
 
 def _check_suggestions(app_json, publish=False):
     """

@@ -37,7 +37,7 @@ from .cli import try_call
 import os
 
 
-def parse_destination(dest_str):
+def get_parsed_destination(dest_str):
     """
     Parses dest_str, which is (roughly) of the form
     PROJECT:/FOLDER/NAME, and returns a tuple (project, folder, name)

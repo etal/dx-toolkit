@@ -159,7 +159,7 @@ def _get_validated_json(json_spec, args):
     override_project_id, override_folder, override_workflow_name = None, None, None
     if (args.destination):
         override_project_id, override_folder, override_workflow_name = \
-            dxpy.executable_builder.parse_destination(args.destination)
+            dxpy.executable_builder.get_parsed_destination(args.destination)
     json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
     json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
     json_spec['name'] = _get_workflow_name(json_spec, override_workflow_name)

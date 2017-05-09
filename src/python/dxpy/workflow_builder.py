@@ -54,8 +54,7 @@ def _parse_executable_spec(src_dir, json_file_name, parser):
         try:
             return json_load_raise_on_duplicates(desc)
         except Exception as e:
-            raise WorkflowBuilderException("Could not parse {} file as JSON: {}".format(
-                            json_file_name, e.message))
+            raise WorkflowBuilderException("Could not parse {} file as JSON: {}".format(json_file_name, e.message))
 
 
 def _get_destination_project(json_spec, args, build_project_id=None):

@@ -118,32 +118,6 @@ def _get_workflow_name(json_spec, workflow_name=None):
     """
     return workflow_name or json_spec.get('name') or ''
 
-def _inline_documentation_files(json_spec, src_dir):
-    """
-    Modifies the provided json_spec dict to inline the contents of
-    the readme file into "description" and the developer readme
-    into "developerNotes".
-    """
-    # Inline description from a readme file
-    if 'description' not in json_spec:
-        readme_filename = None
-        for filename in 'README.md', 'Readme.md', 'readme.md':
-            if os.path.exists(os.path.join(src_dir, filename)):
-                readme_filename = filename
-                break
-        if readme_filename is not None:
-            with open(os.path.join(src_dir, readme_filename)) as fh:
-                json_spec['description'] = fh.read()
-
-    # Inline developerNotes from Readme.developer.md
-    # TODO: add developerNotes field to workflow/new
-    # if 'developerNotes' not in json_spec:
-    #     for filename in 'README.developer.md', 'Readme.developer.md', 'readme.developer.md':
-    #         if os.path.exists(os.path.join(src_dir, filename)):
-    #             with open(os.path.join(src_dir, filename)) as fh:
-    #                 json_spec['developerNotes'] = fh.read()
-    #             break
-
 def _get_unsupported_keys(keys, supported_keys):
     return [key for key in keys if key not in supported_keys]
 
@@ -192,11 +166,12 @@ def _get_validated_json(json_spec, args):
         print("Warning: the following root level fields are not supported and will be ignored: {}"
               .format(",".join(unsupported_keys)))
 
-    _inline_documentation_files(json_spec, args.src_dir)
+    dxpy.executable_builder.inline_documentation_files(json_spec, args.src_dir)
 
     override_project_id, override_folder, override_workflow_name = None, None, None
     if (args.destination):
-        override_project_id, override_folder, override_workflow_name = dxpy.executable_builder.parse_destination(args.destination)
+        override_project_id, override_folder, override_workflow_name = \
+            dxpy.executable_builder.parse_destination(args.destination)
     json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
     json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
     json_spec['name'] = _get_workflow_name(json_spec, override_workflow_name)
@@ -208,7 +183,7 @@ def _get_validated_json(json_spec, args):
 
 def _create_workflow(json_spec):
     """
-    Creates a workflow on the platform and puts it in a closed state.
+    Creates a closed workflow on the platform.
     Returns a workflow_id, or None if the workflow cannot be created.
     """
     try:
@@ -228,10 +203,9 @@ def build(args, _parser):
     if args is None:
         raise Exception("arguments not provided")
 
-    try:
-        json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", dxpy.workflow_builder.WorkflowBuilderException)
-        validated_spec = _get_validated_json(json_spec, args)
-        workflow_id = _create_workflow(validated_spec)
-        return workflow_id
-    except Exception as e:
-        print(e)
+
+    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json",
+                                           dxpy.workflow_builder.WorkflowBuilderException)
+    validated_spec = _get_validated_json(json_spec, args)
+    workflow_id = _create_workflow(validated_spec)
+    return workflow_id

@@ -24,9 +24,6 @@ Executable Builder
 Contains utility methods useful for deploying executables (apps, applets, workflows)
 onto the platform.
 
-It has two responsibilities: parsing arguments supplied to `dx build` and determining
-what builder (app_builder or workflow_builder) to invoke.
-
 '''
 
 from __future__ import print_function, unicode_literals, division, absolute_import
@@ -37,6 +34,7 @@ logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.E
 
 from .utils.resolver import resolve_path, is_container_id
 from .cli import try_call
+import os
 
 def parse_destination(dest_str):
     """
@@ -60,3 +58,28 @@ def parse_destination(dest_str):
     # [PROJECT]:/ENTITYNAME
     # [PROJECT]:/FOLDER/ENTITYNAME
     return try_call(resolve_path, dest_str)
+
+def inline_documentation_files(json_spec, src_dir):
+    """
+    Modifies the provided json_spec dict (which may be an app, applet,
+    workflow spec) to inline the contents of the readme file into
+    "description" and the developer readme into "developerNotes".
+    """
+    # Inline description from a readme file
+    if 'description' not in json_spec:
+        readme_filename = None
+        for filename in 'README.md', 'Readme.md', 'readme.md':
+            if os.path.exists(os.path.join(src_dir, filename)):
+                readme_filename = filename
+                break
+        if readme_filename is not None:
+            with open(os.path.join(src_dir, readme_filename)) as fh:
+                json_spec['description'] = fh.read()
+
+    # Inline developerNotes from Readme.developer.md
+    if 'developerNotes' not in json_spec:
+        for filename in 'README.developer.md', 'Readme.developer.md', 'readme.developer.md':
+            if os.path.exists(os.path.join(src_dir, filename)):
+                with open(os.path.join(src_dir, filename)) as fh:
+                    json_spec['developerNotes'] = fh.read()
+                break

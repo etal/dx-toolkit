@@ -2479,8 +2479,8 @@ def build(args):
                 '--version': args.version_override,
                 '--bill-to': args.bill_to,
                 '--archive': args.archive,
-                #TODO: Handle the options below are always set to True by default
-                # currently they will be silently ignored
+                #TODO: Handle the options below, they are always set to
+                # True by default and will be currently silently ignored
                 #'--[no-]watch': args.watch,
                 #'--parallel-build': args.parallel_build,
                 #'--dx-toolkit[-stable][-legacy-git]-autodep': args.dx_toolkit_autodep,
@@ -2511,15 +2511,13 @@ def build(args):
         elif args.mode == "workflow":
             workflow_builder.build(args, build_parser)
         else:
-            msg = "I don't know what to build. Accepted options: --app, --applet, --workflow."
-            msg += " If it is not provided, an attempt is made to build either an applet or a workflow, depending on"
+            msg = "Unrecognized mode. Accepted options: --app, --applet, --workflow."
+            msg += " If not provided, an attempt is made to build either an applet or a workflow, depending on"
             msg += " whether a dxapp.json or dxworkflow.json file is found in the source directory, respectively."
-            print(msg)
+            build_parser.error(msg)
     except Exception as e:
-        raise e
         print("Error: %s" % (e.message,), file=sys.stderr)
-        sys.exit(3)
-
+        err_exit()
 
 def process_list_of_usernames(thing):
     return ['user-' + name.lower() if name != 'PUBLIC' and

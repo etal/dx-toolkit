@@ -37,33 +37,24 @@ class WorkflowBuilderException(Exception):
     pass
 
 
-def _parse_executable_spec(src_dir, json_file_name, exception, parser):
+def _parse_executable_spec(src_dir, json_file_name, parser):
     """
     Returns the parsed contents of a json specification.
-
-    Precondition: src_dir exists
-
-    Raises exception (exit code 3) if this cannot be done.
+    Raises WorkflowBuilderException (exit code 3) if this cannot be done.
     """
+    if not os.path.isdir(src_dir):
+        parser.error("{} is not a directory".format(src_dir))
 
-    if not os.path.exists(os.path.join(src_dir, "dxworkflow.json")):
+    if not os.path.exists(os.path.join(src_dir, json_file_name)):
         raise WorkflowBuilderException(
             "Directory {} does not contain dxworkflow.json: not a valid DNAnexus app source directory"
             .format(src_dir))
-    with open(os.path.join(src_dir, "dxworkflow.json")) as app_desc:
-        try:
-            return json_load_raise_on_duplicates(app_desc)
-        except Exception as e:
-            raise WorkflowBuilderException("Could not parse dxapp.json file as JSON: " + e.message)
-
-    if not os.path.isdir(src_dir):
-        parser.error("{} is not a directory".format(src_dir))
 
     with open(os.path.join(src_dir, json_file_name)) as desc:
         try:
             return json_load_raise_on_duplicates(desc)
         except Exception as e:
-            raise exception("Could not parse {} file as JSON: {}".format(
+            raise WorkflowBuilderException("Could not parse {} file as JSON: {}".format(
                             json_file_name, e.message))
 
 
@@ -202,8 +193,7 @@ def build(args, parser):
     if args is None:
         raise Exception("arguments not provided")
 
-    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json",
-                                       dxpy.workflow_builder.WorkflowBuilderException, parser)
+    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", parser)
     validated_spec = _get_validated_json(json_spec, args)
     workflow_id = _create_workflow(validated_spec)
     if args.json:

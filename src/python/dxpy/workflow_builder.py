@@ -34,6 +34,7 @@ the effective destination project.
 
 from __future__ import print_function, unicode_literals, division, absolute_import
 import os, sys
+import json
 
 import dxpy
 from .utils import json_load_raise_on_duplicates
@@ -202,10 +203,16 @@ def build(args, _parser):
     parser = _parser
     if args is None:
         raise Exception("arguments not provided")
-
+    if _parser is None:
+        raise Exception("parser not provided")
 
     json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json",
                                            dxpy.workflow_builder.WorkflowBuilderException)
     validated_spec = _get_validated_json(json_spec, args)
     workflow_id = _create_workflow(validated_spec)
-    return workflow_id
+    if args.json:
+        output = dxpy.api.app_describe(workflow_id)
+    else:
+        output ={'id': workflow_id}
+    if output is not None:
+        print(json.dumps(output))

@@ -974,7 +974,6 @@ def build(args, _parser):
         except:
             err_exit()
 
-    return
 
 def main(**kwargs):
     """

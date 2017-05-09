@@ -2468,14 +2468,29 @@ def build(args):
             build_parser.error("Options --remote, --app, and --run cannot all be specified together. Try removing --run and then separately invoking dx run.")
 
         # options not supported by workflow building
-        #TODO: for better experience report all the unsupported options at once
         if args.mode == "workflow":
-             if args.ensure_upload:
-                 build_parser.error("Option --ensure-upload is not supported for workflows.")
-             if args.force_symlinks:
-                 build_parser.error("Option --force-symlinks is not supported for workflows.")
-             if args.publish:
-                 build_parser.error("Option --publish is not yet supported for workflows.")
+            unsupported_options = {
+                '--ensure-upload': args.ensure_upload,
+                '--force-symlinks': args.force_symlinks,
+                '--[no-]publish': args.publish,
+                '--[no-]dry_run': args.dry_run,
+                '--run': args.run,
+                '--remote': args.remote,
+                '--version': args.version_override,
+                '--bill-to': args.bill_to,
+                '--archive': args.archive,
+                #TODO: Handle the options below are always set to True by default
+                # currently they will be silently ignored
+                #'--[no-]watch': args.watch,
+                #'--parallel-build': args.parallel_build,
+                #'--dx-toolkit[-stable][-legacy-git]-autodep': args.dx_toolkit_autodep,
+                #'--[no]version-autonumbering': args.version_autonumbering,
+                #'--[no]update': args.update,
+                '--region': args.region,
+                '--extra-args': args.extra_args}
+            used_unsupported_options = {k: v for k, v in unsupported_options.items() if v}
+            if used_unsupported_options:
+                build_parser.error("Options {} are not supported with workflows".format(", ".join(used_unsupported_options)))
 
     args = build_parser.parse_args()
 
@@ -4040,9 +4055,9 @@ build_parser.add_argument("--remote", help="Build the app remotely by uploading 
 build_parser.add_argument("--no-watch", help="Don't watch the real-time logs of the remote builder. (This option only applicable if --remote was specified).", action="store_false", dest="watch")
 build_parser.add_argument("--no-remote", help=argparse.SUPPRESS, action="store_false", dest="remote")
 
-applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s)/workflow(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s) of the same name in the destination folder.",
                             action="store_true", default=False)
-applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s)/workflow(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s) of the same name in the destination folder.",
                             action="store_true", default=False)
 build_parser.add_argument("-v", "--version", help="Override the version number supplied in the manifest.", default=None,
                     dest="version_override", metavar='VERSION')

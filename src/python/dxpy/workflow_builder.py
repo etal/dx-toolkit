@@ -22,7 +22,7 @@ Contains utility methods useful for deploying workflows onto the platform.
 """
 
 from __future__ import print_function, unicode_literals, division, absolute_import
-import os
+import os, sys
 import json
 
 import dxpy
@@ -100,7 +100,7 @@ def _get_workflow_name(json_spec, workflow_name=None):
     2. 'name' specified in the json file.
     If not provided, returns empty string.
     """
-    return workflow_name or json_spec.get('name') or ''
+    return workflow_name or json_spec.get('name')
 
 
 def _get_unsupported_keys(keys, supported_keys):
@@ -162,7 +162,12 @@ def _get_validated_json(json_spec, args):
             dxpy.executable_builder.get_parsed_destination(args.destination)
     json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
     json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
-    json_spec['name'] = _get_workflow_name(json_spec, override_workflow_name)
+
+    workflow_name = _get_workflow_name(json_spec, override_workflow_name)
+    if not workflow_name:
+        print('Warning: workflow name is not specified')
+    else:
+        json_spec['name'] = workflow_name
 
     if 'stages' in json_spec:
         json_spec['stages'] = _get_validated_stages(json_spec['stages'])
@@ -192,12 +197,16 @@ def build(args, parser):
     if args is None:
         raise Exception("arguments not provided")
 
-    json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", parser)
-    validated_spec = _get_validated_json(json_spec, args)
-    workflow_id = _create_workflow(validated_spec)
-    if args.json:
-        output = dxpy.api.workflow_describe(workflow_id)
-    else:
-        output = {'id': workflow_id}
-    if output is not None:
-        print(json.dumps(output))
+    try:
+        json_spec = _parse_executable_spec(args.src_dir, "dxworkflow.json", parser)
+        validated_spec = _get_validated_json(json_spec, args)
+        workflow_id = _create_workflow(validated_spec)
+        if args.json:
+            output = dxpy.api.workflow_describe(workflow_id)
+        else:
+            output = {'id': workflow_id}
+        if output is not None:
+            print(json.dumps(output))
+    except WorkflowBuilderException as e:
+        print("Error: %s" % (e.message,), file=sys.stderr)
+        sys.exit(3)

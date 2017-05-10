@@ -3781,21 +3781,21 @@ class TestDXClientWorkflow(DXTestCaseBuildWorkflows):
             self.assertIsNone(wf_describe_02["stages"][1]["name"])
             self.assertEqual(wf_describe_02["stages"][1]["executable"], applet_id)
 
-    # def test_build_worklow_malformed_dxworkflow_json(self):
-    #     workflow_dir = self.write_workflow_directory("dxbuilt_workflow", "{")
-    #     with self.assertSubprocessFailure(stderr_regexp='Could not parse dxworkflow\.json file', exit_code=3):
-    #         run("dx build " + workflow_dir)
+    def test_build_worklow_malformed_dxworkflow_json(self):
+        workflow_dir = self.write_workflow_directory("dxbuilt_workflow", "{")
+        with self.assertSubprocessFailure(stderr_regexp='Could not parse dxworkflow\.json file', exit_code=3):
+            run("dx build " + workflow_dir)
 
-    def test_build_worklow_warnings(self):
-        applet_id = dxpy.api.applet_new({"name": "my_first_applet",
-                                         "project": self.project,
-                                         "dxapi": "1.0.0",
-                                         "inputSpec": [],
-                                         "outputSpec": [],
-                                         "runSpec": {"interpreter": "bash",
-                                                     "code": "exit 0"}
-                                         })['id']
-        #TODO: finish this test
+    # def test_build_worklow_warnings(self):
+    #     applet_id = dxpy.api.applet_new({"name": "my_first_applet",
+    #                                      "project": self.project,
+    #                                      "dxapi": "1.0.0",
+    #                                      "inputSpec": [],
+    #                                      "outputSpec": [],
+    #                                      "runSpec": {"interpreter": "bash",
+    #                                                  "code": "exit 0"}
+    #                                      })['id']
+    #     #TODO: finish this test
 
 class TestDXClientFind(DXTestCase):
 

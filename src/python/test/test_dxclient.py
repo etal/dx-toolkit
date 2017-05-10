@@ -3143,6 +3143,7 @@ class TestDXClientWorkflow(DXTestCaseBuildWorkflows):
                                          "runSpec": {"interpreter": "bash",
                                                      "code": ""}
                                          })['id']
+
         workflow_id = run("dx new workflow myworkflow --brief").strip()
         stage_ids = [run("dx add stage myworkflow myapplet --name 'an=awful=name' --brief").strip(),
                      run("dx add stage myworkflow myapplet --name 'second' --brief").strip()]
@@ -3614,20 +3615,22 @@ class TestDXClientWorkflow(DXTestCaseBuildWorkflows):
                         "name": "stage_0_name",
                         "executable": applet_id,
                         "input": {"number": 123456},
-                        "folder": "/stage_0_output"}
+                        "folder": "/stage_0_output",
+                        "executionPolicy": {"restartOn": {}, "onNonRestartableFailure": "failStage"},
+                        "systemRequirements": {"main": {"instanceType": self.default_inst_type}}}
         stage1 = {"id": "stage_1",
                         "executable": applet_id,
                         "input": {"number": {"$dnanexus_link": {"stage": "stage_0",
                                                                 "outputField": "number"}}}}
 
         workflow_spec = {"name": "my_workflow",
-                        "project": self.project,
                         "outputFolder": "/",
                         "stages": [stage0, stage1]}
 
         workflow_dir = self.write_workflow_directory("dxbuilt_workflow",
                                                      json.dumps(workflow_spec),
                                                      readme_content="Workflow Readme")
+
         new_workflow = json.loads(run("dx build --json " + workflow_dir))
         wf_describe = dxpy.get_handler(new_workflow["id"]).describe()
         self.assertEqual(wf_describe["class"], "workflow")
@@ -3642,7 +3645,11 @@ class TestDXClientWorkflow(DXTestCaseBuildWorkflows):
         self.assertEqual(wf_describe["stages"][0]["id"], "stage_0")
         self.assertEqual(wf_describe["stages"][0]["name"], "stage_0_name")
         self.assertEqual(wf_describe["stages"][0]["executable"], applet_id)
-        self.assertEqual(wf_describe["stages"][0]["input"]["number"], 123456)
+        self.assertEqual(wf_describe["stages"][0]["executionPolicy"]["restartOn"], {})
+        self.assertEqual(wf_describe["stages"][0]["executionPolicy"]["onNonRestartableFailure"],
+            "failStage")
+        self.assertEqual(wf_describe["stages"][0]["systemRequirements"]["main"]["instanceType"],
+            self.default_inst_type)
         self.assertEqual(wf_describe["stages"][1]["id"], "stage_1")
         self.assertIsNone(wf_describe["stages"][1]["name"])
         self.assertEqual(wf_describe["stages"][1]["executable"], applet_id)
@@ -3697,16 +3704,98 @@ class TestDXClientWorkflow(DXTestCaseBuildWorkflows):
         self.assertEqual(wf_describe["folder"], dest_folder)
         self.assertEqual(wf_describe["name"], dest_name)
 
-        # errors
+        # Error: No such folder
         dest_folder = "/no_such_folder"
         destination = "{project}:{folder}/".format(project=self.project, folder=dest_folder)
         with self.assertSubprocessFailure(stderr_regexp="ResourceNotFound", exit_code=3):
             run("dx build --json --destination {dest} {src_dir}".format(dest=destination, src_dir=workflow_dir))
 
-    def test_dx_get_build_get_workflow(self):
-        pass
+        # Error: Project not specified
+        with without_project_context():
+            with self.assertSubprocessFailure(stderr_regexp='expected the path to be qualified with a project',
+                                              exit_code=3):
+                new_workflow = run("dx build --json {src_dir}".format(src_dir=workflow_dir))
 
-    #TODO: update tests adding Stage (with ID now)
+    def test_dx_build_get_build_workflow(self):
+        # When building and getting a workflow multiple times we should
+        # obtain functionally identical workflows, ie. identical dxworkflow.json specs.
+        workflow_name = "orig_workflow_name"
+        applet_id = dxpy.api.applet_new({"name": "my_first_applet",
+                                         "project": self.project,
+                                         "dxapi": "1.0.0",
+                                         "inputSpec": [{"name": "number", "class": "int"}],
+                                         "outputSpec": [{"name": "number", "class": "int"}],
+                                         "runSpec": {"interpreter": "bash",
+                                                     "code": "exit 0"}
+                                         })['id']
+        stage0 = {"id": "stage_0",
+                        "name": "stage_0_name",
+                        "executable": applet_id,
+                        "input": {"number": 123456},
+                        "folder": "/stage_0_output"}
+        stage1 = {"id": "stage_1",
+                        "executable": applet_id,
+                        "input": {"number": {"$dnanexus_link": {"stage": "stage_0",
+                                                                "outputField": "number"}}}}
+        workflow_spec = {
+            "name": workflow_name,
+            "outputFolder": "/",
+            "stages": [stage0, stage1]
+        }
+
+        # 1. Build
+        workflow_dir = self.write_workflow_directory("workflow_cycle",
+                                                     json.dumps(workflow_spec),
+                                                     readme_content="Workflow Cycle Readme")
+        workflow_01 = json.loads(run("dx build --json " + workflow_dir))
+        wf_describe_01 = dxpy.get_handler(workflow_01["id"]).describe()
+        self.assertEqual(wf_describe_01["id"], workflow_01["id"])
+
+        # 2. Get and compare with the initial workflow
+        with chdir(tempfile.mkdtemp()):
+            run("dx get {workflow_id}".format(workflow_id=workflow_01["id"]))
+            self.assertTrue(os.path.exists(os.path.join(workflow_name, "dxworkflow.json")))
+            self.assertTrue(os.path.exists(os.path.join(workflow_name, "Readme.md")))
+            workflow_metadata = open(os.path.join(workflow_name, "dxworkflow.json")).read()
+            output_json = json.loads(workflow_metadata, object_pairs_hook=collections.OrderedDict)
+            self.assertEqual(output_json, workflow_spec)
+
+            # 3. Build again and compare with the initial workflow
+            os.chdir(workflow_name) # move to the directory created with dx get
+            workflow_02 = json.loads(run("dx build --json"))
+            wf_describe_02 = dxpy.get_handler(workflow_02["id"]).describe()
+            self.assertEqual(wf_describe_02["class"], "workflow")
+            self.assertEqual(wf_describe_02["id"], workflow_02["id"])
+            self.assertEqual(wf_describe_02["editVersion"], 0)
+            self.assertEqual(wf_describe_02["name"], workflow_name)
+            self.assertEqual(wf_describe_02["state"], "closed")
+            self.assertEqual(wf_describe_02["outputFolder"], "/")
+            self.assertEqual(wf_describe_02["project"], self.project)
+            self.assertEqual(wf_describe_02["description"], "Workflow Cycle Readme")
+            self.assertEqual(len(wf_describe_02["stages"]), 2)
+            self.assertEqual(wf_describe_02["stages"][0]["id"], "stage_0")
+            self.assertEqual(wf_describe_02["stages"][0]["name"], "stage_0_name")
+            self.assertEqual(wf_describe_02["stages"][0]["executable"], applet_id)
+            self.assertEqual(wf_describe_02["stages"][0]["input"]["number"], 123456)
+            self.assertEqual(wf_describe_02["stages"][1]["id"], "stage_1")
+            self.assertIsNone(wf_describe_02["stages"][1]["name"])
+            self.assertEqual(wf_describe_02["stages"][1]["executable"], applet_id)
+
+    # def test_build_worklow_malformed_dxworkflow_json(self):
+    #     workflow_dir = self.write_workflow_directory("dxbuilt_workflow", "{")
+    #     with self.assertSubprocessFailure(stderr_regexp='Could not parse dxworkflow\.json file', exit_code=3):
+    #         run("dx build " + workflow_dir)
+
+    def test_build_worklow_warnings(self):
+        applet_id = dxpy.api.applet_new({"name": "my_first_applet",
+                                         "project": self.project,
+                                         "dxapi": "1.0.0",
+                                         "inputSpec": [],
+                                         "outputSpec": [],
+                                         "runSpec": {"interpreter": "bash",
+                                                     "code": "exit 0"}
+                                         })['id']
+        #TODO: finish this test
 
 class TestDXClientFind(DXTestCase):
 

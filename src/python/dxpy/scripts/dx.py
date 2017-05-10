@@ -4175,7 +4175,7 @@ parser_add_stage.add_argument('executable', help='Name or ID of an executable to
 parser_add_stage.add_argument('--alias', '--version', '--tag', dest='alias',
                               help='Tag or version of the app to add if the executable is an app (default: "default" if an app)')
 parser_add_stage.add_argument('--name', help='Stage name')
-parser_add_stage.add_argument('--id',  dest='stage_id', help='Stage id')
+parser_add_stage.add_argument('--id',  dest='stage_id', help='Stage ID')
 add_stage_folder_args = parser_add_stage.add_mutually_exclusive_group()
 add_stage_folder_args.add_argument('--output-folder', help='Path to the output folder for the stage (interpreted as an absolute path)')
 add_stage_folder_args.add_argument('--relative-output-folder', help='A relative folder path for the stage (interpreted as relative to the workflow\'s output folder)')

@@ -165,7 +165,7 @@ class DXWorkflow(DXDataObject, DXExecutable):
         :param stage: A stage ID, name, or index (stage index is the number n for the nth stage, starting from 0; can be provided as an int or a string)
         :type stage: int or string
         :returns: The stage ID (this is a no-op if it was already a stage ID)
-        :raises: :class:`~dxpy.exceptions.DXError` if *stage* could not be parsed or resolved to a stage ID
+        :raises: :class:`~dxpy.exceptions.DXError` if *stage* could not be parsed, resolved to a stage ID, or it could not be found in the workflow
         '''
         # first, if it is a string, see if it is an integer
         if isinstance(stage, basestring):
@@ -194,13 +194,13 @@ class DXWorkflow(DXDataObject, DXExecutable):
                 return stage
 
         # A stage with the provided ID can't be found in the workflow, so look for it as a name
-        matching_stage_ids = [stg['id'] for stg in self.stages if stg.get('name') == stage]
-        if len(matching_stage_ids) == 0:
+        stage_ids_matching_name = [stg['id'] for stg in self.stages if stg.get('name') == stage]
+        if len(stage_ids_matching_name) == 0:
             raise DXError('DXWorkflow: the given stage identifier could not be found as a stage ID nor as a stage name')
-        elif len(matching_stage_ids) > 1:
+        elif len(stage_ids_matching_name) > 1:
             raise DXError('DXWorkflow: more than one workflow stage was found to have the name "' + stage + '"')
         else:
-            return matching_stage_ids[0]
+            return stage_ids_matching_name[0]
 
     def add_stage(self, executable, stage_id=None, name=None, folder=None, stage_input=None, instance_type=None,
                   edit_version=None, **kwargs):

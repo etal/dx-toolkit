@@ -47,7 +47,7 @@ def _parse_executable_spec(src_dir, json_file_name, parser):
 
     if not os.path.exists(os.path.join(src_dir, json_file_name)):
         raise WorkflowBuilderException(
-            "Directory {} does not contain dxworkflow.json: not a valid DNAnexus app source directory"
+            "Directory {} does not contain dxworkflow.json: not a valid DNAnexus workflow source directory"
             .format(src_dir))
 
     with open(os.path.join(src_dir, json_file_name)) as desc:
@@ -114,11 +114,12 @@ def _get_validated_stage(stage, stage_index):
             "executable is not specified for stage with index {}".format(stage_index))
 
     # print ignored keys if present in json_spec
-    supported_keys = set(["id", "input", "executable", "name", "folder", "input"])
+    supported_keys = set(["id", "input", "executable", "name", "folder",
+                          "input", "executionPolicy", "systemRequirements"])
     unsupported_keys = _get_unsupported_keys(stage.keys(), supported_keys)
-    if unsupported_keys:
+    if len(unsupported_keys) > 0:
         print("Warning: the following stage fields are not supported and will be ignored: {}"
-              .format(",".join(unsupported_keys)))
+              .format(", ".join(unsupported_keys)))
 
     #TODO: validate stage input
     if 'input' in stage:
@@ -129,10 +130,10 @@ def _get_validated_stage(stage, stage_index):
 
 def _get_validated_stages(stages):
     """
-    Validates stages of the workflow as an array of mappings.
+    Validates stages of the workflow as an array of maps.
     """
     if not isinstance(stages, list):
-        raise WorkflowBuilderException("Stages must be specified as an array or mappings")
+        raise WorkflowBuilderException("Stages must be specified as an array or maps")
     validated_stages = []
     for index, stage in enumerate(stages):
         validated_stages.append(_get_validated_stage(stage, index))
@@ -148,17 +149,16 @@ def _get_validated_json(json_spec, args):
     if not args:
         return
 
+    # print ignored keys if present in json_spec
     supported_keys = set(["project", "folder", "name", "outputFolder", "stages"])
     unsupported_keys = _get_unsupported_keys(json_spec.keys(), supported_keys)
-    if unsupported_keys:
+    if len(unsupported_keys) > 0:
         print("Warning: the following root level fields are not supported and will be ignored: {}"
-              .format(",".join(unsupported_keys)))
+              .format(", ".join(unsupported_keys)))
 
     dxpy.executable_builder.inline_documentation_files(json_spec, args.src_dir)
 
-    override_project_id, override_folder, override_workflow_name = None, None, None
-    if (args.destination):
-        override_project_id, override_folder, override_workflow_name = \
+    override_project_id, override_folder, override_workflow_name = \
             dxpy.executable_builder.get_parsed_destination(args.destination)
     json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
     json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
@@ -196,7 +196,7 @@ def build(args, parser):
     validated_spec = _get_validated_json(json_spec, args)
     workflow_id = _create_workflow(validated_spec)
     if args.json:
-        output = dxpy.api.app_describe(workflow_id)
+        output = dxpy.api.workflow_describe(workflow_id)
     else:
         output = {'id': workflow_id}
     if output is not None:

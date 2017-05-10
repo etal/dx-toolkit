@@ -135,6 +135,7 @@ def run(command, **kwargs):
         output = check_output(command_encoded, shell=True, **kwargs)
     else:
         output = check_output(command, shell=True, **kwargs)
+    print(output)
     return output
 
 
@@ -431,7 +432,7 @@ class DXTestCaseBuildWorkflows(DXTestCase):
     This class adds methods to ``DXTestCase`` related to workflow creation and
     workflow destruction.
     """
-    workflow_spec = {
+    base_workflow_spec = {
         "name": "my_workflow",
         "outputFolder": "/"
     }
@@ -446,7 +447,7 @@ class DXTestCaseBuildWorkflows(DXTestCase):
 
     def write_workflow_directory(self, workflow_name, dxworkflow_str,
                                  readme_content="Workflow doc", build_basic=False):
-        # Note: if called twice with the same app_name, will overwrite
+        # Note: if called twice with the same workflow_name, will overwrite
         # the dxworkflow.json and code file (if specified) but will not
         # remove any other files that happened to be present
         try:
@@ -459,7 +460,7 @@ class DXTestCaseBuildWorkflows(DXTestCase):
                 manifest.write(dxworkflow_str.encode())
         elif build_basic:
             with open(os.path.join(self.temp_file_path, workflow_name, 'dxworkflow.json'), 'wb') as manifest:
-                manifest.write(workflow_spec)
+                manifest.write(base_workflow_spec)
         with open(os.path.join(self.temp_file_path, workflow_name, 'Readme.md'), 'w') as readme_file:
             readme_file.write(readme_content)
         return os.path.join(self.temp_file_path, workflow_name)

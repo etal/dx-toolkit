@@ -28,10 +28,6 @@ onto the platform.
 
 from __future__ import print_function, unicode_literals, division, absolute_import
 
-import logging
-logging.basicConfig(level=logging.WARNING)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.ERROR)
-
 from .utils.resolver import resolve_path, is_container_id
 from .cli import try_call
 import os

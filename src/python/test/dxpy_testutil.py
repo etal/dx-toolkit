@@ -427,6 +427,7 @@ class DXTestCase(unittest.TestCase):
 
             self.assertFalse(True, error_string)
 
+
 class DXTestCaseBuildWorkflows(DXTestCase):
     """
     This class adds methods to ``DXTestCase`` related to workflow creation and
@@ -460,7 +461,7 @@ class DXTestCaseBuildWorkflows(DXTestCase):
                 manifest.write(dxworkflow_str.encode())
         elif build_basic:
             with open(os.path.join(self.temp_file_path, workflow_name, 'dxworkflow.json'), 'wb') as manifest:
-                manifest.write(base_workflow_spec)
+                manifest.write(self.base_workflow_spec)
         with open(os.path.join(self.temp_file_path, workflow_name, 'Readme.md'), 'w') as readme_file:
             readme_file.write(readme_content)
         return os.path.join(self.temp_file_path, workflow_name)

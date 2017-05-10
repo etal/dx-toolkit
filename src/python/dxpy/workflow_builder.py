@@ -22,7 +22,8 @@ Contains utility methods useful for deploying workflows onto the platform.
 """
 
 from __future__ import print_function, unicode_literals, division, absolute_import
-import os, sys
+import os
+import sys
 import json
 
 import dxpy
@@ -159,7 +160,7 @@ def _get_validated_json(json_spec, args):
     dxpy.executable_builder.inline_documentation_files(json_spec, args.src_dir)
 
     override_project_id, override_folder, override_workflow_name = \
-            dxpy.executable_builder.get_parsed_destination(args.destination)
+        dxpy.executable_builder.get_parsed_destination(args.destination)
     json_spec['project'] = _get_destination_project(json_spec, args, override_project_id)
     json_spec['folder'] = _get_destination_folder(json_spec, override_folder)
 

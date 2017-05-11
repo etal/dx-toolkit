@@ -1457,7 +1457,7 @@ def main(number):
         self.assertRaisesRegexp(DXError, 'more than once',
                                 dxworkflow.run, {"0.number": 32, "stagename.number": 42})
         # Bad stage name
-        self.assertRaisesRegexp(DXError, 'nor found as a stage name',
+        self.assertRaisesRegexp(DXError, 'could not be found as a stage ID nor as a stage name',
                                 dxworkflow.run, {"nonexistentstage.number": 32})
 
     def test_new_dxworkflow(self):

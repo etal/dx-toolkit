@@ -42,7 +42,9 @@ from ..utils.completer import LocalCompleter
 from ..app_categories import APP_CATEGORIES
 from ..exceptions import err_exit
 from ..utils.printing import BOLD
-from ..compat import open, USING_PYTHON2, basestring
+from ..compat import open, USING_PYTHON2, decode_command_line_args, basestring
+
+decode_command_line_args()
 
 APP_VERSION_RE = re.compile("^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)(-[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?(\+[-0-9A-Za-z]+(\.[-0-9A-Za-z]+)*)?$")
 

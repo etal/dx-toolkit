@@ -4020,10 +4020,9 @@ build_parser.add_argument("--force-symlinks", help="If specified, will not attem
 src_dir_action = build_parser.add_argument("src_dir", help="App, applet, or workflow source directory (default: current directory)", nargs='?')
 src_dir_action.completer = LocalCompleter()
 
-build_parser.add_argument("--app", "--create-app", help="Create an app (otherwise, creates an applet or a workflow)", action="store_const",
-                    dest="mode", const="app")
+build_parser.add_argument("--app", "--create-app", help="Create an app.", action="store_const", dest="mode", const="app")
 build_parser.add_argument("--create-applet", help=argparse.SUPPRESS, action="store_const", dest="mode", const="applet")
-build_parser.add_argument("--create-workflow", help=argparse.SUPPRESS, action="store_const", dest="mode", const="workflow")
+build_parser.add_argument("--workflow", "--create-workflow", help="Create a workflow.", action="store_const", dest="mode", const="workflow")
 
 applet_and_workflow_options.add_argument("-d", "--destination", help="Specifies the destination project, destination folder, and/or name for the applet, in the form [PROJECT_NAME_OR_ID:][/[FOLDER/][NAME]]. Overrides the project, folder, and name fields of the dxapp.json or dxworkflow.json, if they were supplied.", default='.')
 
@@ -4054,9 +4053,9 @@ build_parser.add_argument("--remote", help="Build the app remotely by uploading 
 build_parser.add_argument("--no-watch", help="Don't watch the real-time logs of the remote builder. (This option only applicable if --remote was specified).", action="store_false", dest="watch")
 build_parser.add_argument("--no-remote", help=argparse.SUPPRESS, action="store_false", dest="remote")
 
-applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-f", "--overwrite", help="Remove existing applet(s) of the same name in the destination folder. This option is not yet supported for workflows.",
                             action="store_true", default=False)
-applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s) of the same name in the destination folder.",
+applet_and_workflow_options.add_argument("-a", "--archive", help="Archive existing applet(s) of the same name in the destination folder. This option is not yet supported for workflows.",
                             action="store_true", default=False)
 build_parser.add_argument("-v", "--version", help="Override the version number supplied in the manifest.", default=None,
                     dest="version_override", metavar='VERSION')

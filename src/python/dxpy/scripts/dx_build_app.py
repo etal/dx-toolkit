@@ -1000,7 +1000,7 @@ def main(**kwargs):
             logging.warn('Warning: dx-build-app has been replaced with "dx build --create-app". Please update your scripts.')
         elif sys.argv[0].endswith('dx-build-applet'):
             logging.warn('Warning: dx-build-applet has been replaced with "dx build". Please update your scripts.')
-        exit(0)
+        err_exit()
 
 if __name__ == '__main__':
     main()

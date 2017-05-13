@@ -6375,8 +6375,10 @@ class TestDXBuildApp(DXTestCaseBuildApps):
         self.assertTrue(os.path.exists(os.path.join(app_dir, 'code.py')))
         self.assertFalse(os.path.exists(os.path.join(app_dir, 'code.pyc')))
 
-    def test_build_single_region_app_with_regional_options(self):
-        app_name = "asset_{t}_single_region_app".format(t=int(time.time()))
+    @unittest.skipUnless(testutil.TEST_ISOLATED_ENV,
+                         'skipping test that would create apps')
+    def test_build_app_with_regional_options(self):
+        app_name = "app_regional_options"
         app_spec = {
             "name": app_name,
             "dxapi": "1.0.0",
@@ -6402,11 +6404,11 @@ class TestDXBuildApp(DXTestCaseBuildApps):
 
     @unittest.skipUnless(testutil.TEST_ISOLATED_ENV,
                          'skipping test that would create apps')
-    def test_build_single_region_app_with_resources_and_no_regional_options_fields(self):
+    def test_build_app_with_resources(self):
         region = "aws:us-east-1"
         with temporary_project(region=region) as tmp_project:
             file_id = create_file_in_project("abc", tmp_project.get_id())
-            app_name = "asset_{t}_single_region_app_resources".format(t=int(time.time()))
+            app_name = "app_resources"
             app_spec = dict(self.base_app_spec, name=app_name,
                             resources=tmp_project.get_id())
             app_dir = self.write_app_directory(app_name, json.dumps(app_spec), "code.py")
@@ -6899,6 +6901,33 @@ class TestDXBuildApp(DXTestCaseBuildApps):
 
         with self.assertRaisesRegexp(subprocess.CalledProcessError, "InvalidInput"):
             run("dx build --create-app --region aws:not-a-region --json " + app_dir)
+
+    @unittest.skipUnless(testutil.TEST_ISOLATED_ENV,
+                         'skipping test that would create apps')
+    def test_build_app_billTo_local(self):
+        app_spec = {
+            "dxapi": "1.0.0",
+            "runSpec": {"file": "code.py", "interpreter": "python2.7"},
+            "inputSpec": [],
+            "outputSpec": [],
+            "version": "1.0.0"
+            }
+
+        # # bill to org
+        app_spec["name"] = "app_build_local_bill_to_org"
+        app_dir = self.write_app_directory(app_spec["name"], json.dumps(app_spec), "code.py")
+        new_app = json.loads(run("dx build --app --bill-to org-piratelabs --json " + app_dir))
+        container_id = new_app["regionalOptions"]["aws:us-east-1"]["resources"]
+        container_describe = dxpy.api.container_describe(container_id)
+        self.assertEqual(container_describe["billTo"], "org-piratelabs")
+
+        # bill to user (default)
+        app_spec["name"] = "app_build_local_bill_to_user"
+        app_dir = self.write_app_directory(app_spec["name"], json.dumps(app_spec), "code.py")
+        new_app = json.loads(run("dx build --app --json " + app_dir))
+        container_id = new_app["regionalOptions"]["aws:us-east-1"]["resources"]
+        container_describe = dxpy.api.container_describe(container_id)
+        self.assertEqual(container_describe["billTo"], "user-alice")
 
     @unittest.skipUnless(testutil.TEST_ISOLATED_ENV,
                          'skipping test that would create apps')
